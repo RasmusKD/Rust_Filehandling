@@ -1,0 +1,11 @@
+Refleksionsspørgsmål:
+Hvad sker der, hvis filen allerede eksisterer, når du bruger File::create?
+Filen overskrives, hvilket sletter alt tidligere indhold.
+
+Hvordan undgår du at overskrive eksisterende indhold i filen?
+Brug OpenOptions med .append(true) for at tilføje tekst uden at overskrive.
+
+Fordele ved Rust's memory management:
+Sikkerhed: Rust garanterer ingen data-races eller dangling pointers.
+Effektivitet: Med ownership og borrowing elimineres behovet for garbage collection, hvilket gør programmet hurtigere.
+Tydelig fejlhåndtering: Brugen af Result og Option gør det nemt at håndtere fejl.
