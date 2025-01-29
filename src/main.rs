@@ -1,5 +1,5 @@
 use std::fs::{self, File, OpenOptions};
-use std::io::{self, Write, Read};
+use std::io::{self, Write};
 
 fn main() {
     let file_name = "fil.txt";
@@ -22,11 +22,12 @@ fn menu_loop(file_name: &str) {
         if file_exists {
             println!("1. Tilføj tekst til filen");
             println!("2. Læs filens indhold");
+            println!("3. Slet filen");
         } else {
-            println!("1. Tilføj tekst til filen (deaktiveret)");
-            println!("2. Læs filens indhold (deaktiveret)");
+            println!("1. Tilføj tekst til filen \x1b[31mdeaktiveret)\x1b[0m");
+            println!("2. Læs filens indhold \x1b[31m(deaktiveret)\x1b[0m");
+            println!("3. Slet filen \x1b[31m(deaktiveret)\x1b[0m");
         }
-        println!("3. Slet filen");
         println!("4. Opret fil på ny (overskriver eksisterende fil)");
         println!("5. Afslut programmet");
 
@@ -40,7 +41,7 @@ fn menu_loop(file_name: &str) {
         match choice {
             "1" if file_exists => append_text(file_name),
             "2" if file_exists => read_file(file_name),
-            "3" => delete_file(file_name),
+            "3" if file_exists => delete_file(file_name),
             "4" => {
                 // Opret filen på ny
                 create_file(file_name);
