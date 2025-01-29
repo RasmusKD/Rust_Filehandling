@@ -1,23 +1,13 @@
-use std::fs::{File, OpenOptions};
-use std::io;
-use std::io::{Write, ErrorKind};
+use std::fs::{self, File, OpenOptions};
+use std::io::{self, Write, Read};
 
 fn main() {
     let file_name = "fil.txt";
 
-    // Tjek om filen allerede eksisterer (undgå overskrivelse)
-    match File::open(file_name) {
-        Ok(_) => {
-            println!("Filen eksisterer allerede. Ingen ændringer foretaget.");
-        }
-        Err(error) => {
-            if error.kind() == ErrorKind::NotFound {
-                // Opret filen, da den ikke eksisterer
-                create_file(file_name);
-            } else {
-                panic!("Der opstod en fejl: {:?}", error);
-            }
-        }
+    // Tjek om filen eksisterer, og opret den hvis nødvendigt
+    if File::open(file_name).is_err() {
+        println!("Filen findes ikke. Den bliver oprettet.");
+        create_file(file_name);
     }
 
     // Menu-loop: Brugeren kan vælge flere handlinger, før programmet afsluttes
@@ -26,10 +16,16 @@ fn main() {
 
 fn menu_loop(file_name: &str) {
     loop {
+        let file_exists = fs::metadata(file_name).is_ok();
         // Udskriv menuen til brugeren
         println!("\nVælg en handling:");
-        println!("1. Tilføj tekst til filen");
-        println!("2. Læs filens indhold");
+        if file_exists {
+            println!("1. Tilføj tekst til filen");
+            println!("2. Læs filens indhold");
+        } else {
+            println!("1. Tilføj tekst til filen (deaktiveret)");
+            println!("2. Læs filens indhold (deaktiveret)");
+        }
         println!("3. Slet filen");
         println!("4. Opret fil på ny (overskriver eksisterende fil)");
         println!("5. Afslut programmet");
@@ -42,8 +38,8 @@ fn menu_loop(file_name: &str) {
         let choice = choice.trim(); // Fjern unødvendige whitespaces
 
         match choice {
-            "1" => append_text(file_name),
-            "2" => read_file(file_name),
+            "1" if file_exists => append_text(file_name),
+            "2" if file_exists => read_file(file_name),
             "3" => delete_file(file_name),
             "4" => {
                 // Opret filen på ny
@@ -66,11 +62,7 @@ fn append_text(file_name: &str) {
     let mut file = OpenOptions::new()
         .append(true) // Tilføj tekst til filens slutning (.write er redundant med .append)
         .open(file_name)
-        .unwrap_or_else(|_| {
-            // Hvis filen ikke findes, opret en ny
-            println!("Filen findes ikke. Den bliver oprettet.");
-            create_file(file_name)
-        });
+        .expect("Kunne ikke åbne filen");
 
     println!("Skriv tekst til filen:");
     let mut input = String::new();
@@ -79,7 +71,7 @@ fn append_text(file_name: &str) {
         .read_line(&mut input)
         .expect("Kunne ikke læse input");
 
-    // Tilføj brugerens input til filen
+    // Tilføj brugerens input til filen \n for ny linje
     file.write_all(format!("\n{}", input).as_bytes())
         .expect("Kunne ikke tilføje tekst til filen");
     println!("Teksten blev tilføjet til filen.");
@@ -87,7 +79,7 @@ fn append_text(file_name: &str) {
 
 fn read_file(file_name: &str) {
     // Læs og udskriv filens indhold
-    match std::fs::read_to_string(file_name) {
+    match fs::read_to_string(file_name) {
         Ok(content) => println!("Filens indhold:\n{}", content),
         Err(_) => println!("Filen kunne ikke læses eller findes ikke."),
     }
@@ -95,16 +87,14 @@ fn read_file(file_name: &str) {
 
 fn delete_file(file_name: &str) {
     // Slet filen
-    match std::fs::remove_file(file_name) {
+    match fs::remove_file(file_name) {
         Ok(_) => println!("Filen blev slettet."),
         Err(_) => println!("Filen kunne ikke slettes eller findes ikke."),
     }
 }
 
-fn create_file(file_name: &str) -> File {
-    // Opret fil (eller overskriv eksisterende) og skriv standardtekst
+fn create_file(file_name: &str) {
     let mut file = File::create(file_name).expect("Kunne ikke oprette filen");
     file.write_all(b"Dette er en ny fil. ").expect("Kunne ikke skrive til filen");
     println!("Filen blev oprettet med ny tekst.");
-    file
 }
