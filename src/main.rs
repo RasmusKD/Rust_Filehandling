@@ -1,3 +1,4 @@
+use colored::*;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 
@@ -24,9 +25,9 @@ fn menu_loop(file_name: &str) {
             println!("2. Læs filens indhold");
             println!("3. Slet filen");
         } else {
-            println!("1. Tilføj tekst til filen \x1b[31mdeaktiveret)\x1b[0m");
-            println!("2. Læs filens indhold \x1b[31m(deaktiveret)\x1b[0m");
-            println!("3. Slet filen \x1b[31m(deaktiveret)\x1b[0m");
+            println!("1. Tilføj tekst til filen {}", "(deaktiveret)".red());
+            println!("2. Læs filens indhold {}", "(deaktiveret)".red());
+            println!("3. Slet filen {}", "(deaktiveret)".red());
         }
         println!("4. Opret fil på ny (overskriver eksisterende fil)");
         println!("5. Afslut programmet");
