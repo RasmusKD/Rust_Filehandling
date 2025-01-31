@@ -6,7 +6,7 @@ fn main() {
     let file_name = "fil.txt";
 
     // Tjek om filen eksisterer, og opret den hvis nødvendigt
-    if let Err(_) = File::open(file_name) {
+    if File::open(file_name).is_err() {
         println!("Filen findes ikke. Den bliver oprettet.");
         if let Err(e) = create_file(file_name) {
             eprintln!("Fejl ved oprettelse af fil: {}", e);
