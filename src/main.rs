@@ -6,9 +6,12 @@ fn main() {
     let file_name = "fil.txt";
 
     // Tjek om filen eksisterer, og opret den hvis nødvendigt
-    if File::open(file_name).is_err() {
+    if let Err(_) = File::open(file_name) {
         println!("Filen findes ikke. Den bliver oprettet.");
-        create_file(file_name);
+        if let Err(e) = create_file(file_name) {
+            eprintln!("Fejl ved oprettelse af fil: {}", e);
+            return;
+        }
     }
 
     // Menu-loop: Brugeren kan vælge flere handlinger, før programmet afsluttes
@@ -23,14 +26,16 @@ fn menu_loop(file_name: &str) {
         if file_exists {
             println!("1. Tilføj tekst til filen");
             println!("2. Læs filens indhold");
-            println!("3. Slet filen");
+            println!("3. Tøm filens indhold");
+            println!("4. Slet filen");
         } else {
             println!("1. Tilføj tekst til filen {}", "(deaktiveret)".red());
             println!("2. Læs filens indhold {}", "(deaktiveret)".red());
-            println!("3. Slet filen {}", "(deaktiveret)".red());
+            println!("3. Tøm filens indhold {}", "(deaktiveret)".red());
+            println!("4. Slet filen {}", "(deaktiveret)".red());
         }
-        println!("4. Opret fil på ny (overskriver eksisterende fil)");
-        println!("5. Afslut programmet");
+        println!("5. Opret fil på ny (overskriver eksisterende fil)");
+        println!("6. Afslut programmet");
 
         // Læs brugerens valg fra standard input
         let mut choice = String::new();
@@ -40,63 +45,88 @@ fn menu_loop(file_name: &str) {
         let choice = choice.trim(); // Fjern unødvendige whitespaces
 
         match choice {
-            "1" if file_exists => append_text(file_name),
-            "2" if file_exists => read_file(file_name),
-            "3" if file_exists => delete_file(file_name),
-            "4" => {
-                // Opret filen på ny
-                create_file(file_name);
+            "1" if file_exists => {
+                if let Err(e) = append_text(file_name) {
+                    eprintln!("Fejl: {}", e);
+                }
+            }
+            "2" if file_exists => {
+                if let Err(e) = read_file(file_name) {
+                    eprintln!("Fejl: {}", e);
+                }
+            }
+            "3" if file_exists => {
+                if let Err(e) = clear_file(file_name) {
+                    eprintln!("Fejl: {}", e);
+                }
+            }
+            "4" if file_exists => {
+                if let Err(e) = delete_file(file_name) {
+                    eprintln!("Fejl: {}", e);
+                }
             }
             "5" => {
-                // Afslut programmet
+                if let Err(e) = create_file(file_name) {
+                    eprintln!("Fejl: {}", e);
+                }
+            }
+            "6" => {
                 println!("Afslutter programmet. Farvel!");
                 break;
             }
-            _ => {
-                // Hvis brugeren indtaster noget ugyldigt
-                println!("Ugyldigt valg. Prøv igen.");
-            }
+            _ => println!("Ugyldigt valg. Indtast et tal mellem 1-6."),
         }
     }
 }
 
-fn append_text(file_name: &str) {
-    let mut file = OpenOptions::new()
-        .append(true) // Tilføj tekst til filens slutning (.write er redundant med .append)
-        .open(file_name)
-        .expect("Kunne ikke åbne filen");
+// Tilføj tekst til filen
+fn append_text(file_name: &str) -> io::Result<()> {
+    let mut file = OpenOptions::new().append(true).open(file_name)?;
 
     println!("Skriv tekst til filen:");
     let mut input = String::new();
-    // Læs tekst fra brugeren
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Kunne ikke læse input");
+    io::stdin().read_line(&mut input)?;
 
-    // Tilføj brugerens input til filen \n for ny linje
-    file.write_all(format!("\n{}", input).as_bytes())
-        .expect("Kunne ikke tilføje tekst til filen");
-    println!("Teksten blev tilføjet til filen.");
-}
+    let input = input.trim(); // Fjern whitespaces og ekstra linjeskift
 
-fn read_file(file_name: &str) {
-    // Læs og udskriv filens indhold
-    match fs::read_to_string(file_name) {
-        Ok(content) => println!("Filens indhold:\n{}", content),
-        Err(_) => println!("Filen kunne ikke læses eller findes ikke."),
+    if !input.is_empty() {
+        writeln!(file, "{}", input)?; // Udskriver tekst med en ny linje
+        println!("Teksten blev tilføjet til filen.");
+    } else {
+        println!("Ingen tekst blev tilføjet.");
     }
+    Ok(())
 }
 
-fn delete_file(file_name: &str) {
-    // Slet filen
-    match fs::remove_file(file_name) {
-        Ok(_) => println!("Filen blev slettet."),
-        Err(_) => println!("Filen kunne ikke slettes eller findes ikke."),
+// Læs filens indhold
+fn read_file(file_name: &str) -> io::Result<()> {
+    let content = fs::read_to_string(file_name)?; // Fejlhåndtering gøres automatisk af ?
+    if content.is_empty() {
+        println!("Filen er tom.");
+    } else {
+        println!("Filens indhold:\n{}", content);
     }
+    Ok(())
 }
 
-fn create_file(file_name: &str) {
-    let mut file = File::create(file_name).expect("Kunne ikke oprette filen");
-    file.write_all(b"Dette er en ny fil. ").expect("Kunne ikke skrive til filen");
+// Tøm filens indhold uden at slette den
+fn clear_file(file_name: &str) -> io::Result<()> {
+    File::create(file_name)?; // Overskriver filen uden at skrive noget i den
+    println!("Filens indhold er blevet tømt.");
+    Ok(())
+}
+
+// Slet filen
+fn delete_file(file_name: &str) -> io::Result<()> {
+    fs::remove_file(file_name)?; // Fejlhåndtering gøres automatisk af ?
+    println!("Filen blev slettet.");
+    Ok(())
+}
+
+// Opret en ny fil (overskriver eksisterende fil)
+fn create_file(file_name: &str) -> io::Result<()> {
+    let mut file = File::create(file_name)?;
+    file.write_all(b"Dette er en ny fil.")?;
     println!("Filen blev oprettet med ny tekst.");
+    Ok(())
 }
