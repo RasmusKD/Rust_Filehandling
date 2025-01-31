@@ -65,6 +65,9 @@ fn menu_loop(file_name: &str) {
                     eprintln!("Fejl: {}", e);
                 }
             }
+            "1" | "2" | "3" | "4" => {
+                println!("Dette valg er deaktiveret, fordi filen ikke findes.");
+            }
             "5" => {
                 if let Err(e) = create_file(file_name) {
                     eprintln!("Fejl: {}", e);
